@@ -38,6 +38,20 @@ module Sunspot
     end
 
     class DataAccessor < Sunspot::Adapters::DataAccessor
+
+      attr_accessor :include
+
+      def initialize(clazz)
+        super(clazz)
+        @inherited_attributes = [:include]
+      end
+
+      def scope_for_load
+        scope = relation
+        scope = scope.includes(@include) if @include.present?
+        scope 
+      end
+
       def load(id)
         @clazz.find(bson_id(id)) rescue nil
       end
