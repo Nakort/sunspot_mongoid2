@@ -47,17 +47,17 @@ module Sunspot
       end
 
       def scope_for_load
-        scope = relation
+        scope = @clazz
         scope = scope.includes(@include) if @include.present?
         scope 
       end
 
       def load(id)
-        @clazz.find(bson_id(id)) rescue nil
+        scope_for_load.find(bson_id(id)) rescue nil
       end
 
       def load_all(ids)
-        @clazz.where(:_id.in => ids.map { |id| bson_id(id) })
+        scope_for_load.where(:_id.in => ids.map { |id| bson_id(id) })
       end
 
       def bson_id(id)
