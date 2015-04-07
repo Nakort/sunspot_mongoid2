@@ -28,6 +28,39 @@ module Sunspot
       def solr_index(opt={})
         Sunspot.index!(all)
       end
+
+      def solr_index_orphans(opts={})
+        batch_size = opts[:batch_size] || Sunspot.config.indexing.default_batch_size          
+
+        solr_page = 0
+        solr_ids = []
+        while (solr_page = solr_page.next)
+          ids = solr_search_ids { paginate(:page => solr_page, :per_page => 1000) }.to_a
+          break if ids.empty?
+          solr_ids.concat ids
+        end
+
+        return solr_ids - self.pluck(:id).map(&:to_s)
+      end
+
+      # 
+      # Find IDs of records of this class that are indexed in Solr but do not
+      # exist in the database, and remove them from Solr. Under normal
+      # circumstances, this should not be necessary; this method is provided
+      # in case something goes wrong.
+      #
+      # ==== Options (passed as a hash)
+      #
+      # batch_size<Integer>:: Batch size with which to load records
+      #                       Default is 50
+      # 
+      def solr_clean_index_orphans(opts={})
+        solr_index_orphans(opts).each do |id|
+          new do |fake_instance|
+            fake_instance._id = id
+          end.solr_remove_from_index
+        end
+      end
     end
 
 
